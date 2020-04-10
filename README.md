@@ -7,6 +7,12 @@ Fully working C++ -> WebGL (Web assembly) emscripten boilerplate
 - using SDL2
 - detailed Windows setup
 
+## Building the project... ##
+`.wasm` and `.js` file is taken **from bin folder!**
+
+- using make... `make` or `make all` from emsdk shell
+- using emcc... `emcc ..\source\main.cpp -std=c++11 -s WASM=1 -s USE_SDL=2 -s USE_WEBGL2=1 -O3 -o index.js -I"<GLM PATH>"` from `\bin` folder
+
 
 ## Setup ##
 
