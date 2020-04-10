@@ -43,7 +43,7 @@ Setup done on windows (will work on other OSes, but you have to find tools from 
     Additional libraries like `glm` **(needed by this example)**, you may also use other libs this way in future
     - my glm include path `C:\\MinGW\\lib\\gcc\\mingw32\\6.3.0\\include\\c++\\glm`
 
-### Code overview (antialiasing and other stuff) ### 
+## Code overview (antialiasing and other stuff) ## 
 
 1. Includes...
     - `#include <stdio.h>` and `#include <stdlib.h>` for `printf()` calls and other
