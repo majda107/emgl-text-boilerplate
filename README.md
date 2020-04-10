@@ -62,3 +62,9 @@ Setup done on windows (will work on other OSes, but you have to find tools from 
 
 4. Manual compilation
     - use `emcc main.cpp -std=c++11 -s WASM=1 -s USE_SDL=2 -s USE_WEBGL2=1 -O3 -o index.js -I"<LIBS LIKE GLM PATH>"` command from **emsdk shell* to compile code manually without any makefile
+
+
+## Inspired by... ##
+https://github.com/krogank9/sdl_ogl_tests/blob/master/vg/src/main.cpp
+https://gist.github.com/derofim/261630cc9eea7fce431710dc2e97b094
+https://github.com/timhutton/opengl-canvas-wasm
