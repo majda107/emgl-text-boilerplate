@@ -3,6 +3,7 @@
 Fully working C++ -> WebGL (Web assembly) emscripten boilerplate 
 - ES 3.0 based
 - Working antialiasing
+- Mouse input (cross-language function calls)
 - using SDL2
 - detailed Windows setup
 
