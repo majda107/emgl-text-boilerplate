@@ -1,0 +1,1 @@
+# emcc main.cpp -std=c++11 -s WASM=1 -s USE_SDL=2 -s USE_WEBGL2=1 -O3 -o index.js -I"C:\MinGW\lib\gcc\mingw32\6.3.0\include\c++\glm"
