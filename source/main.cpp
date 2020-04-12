@@ -79,10 +79,10 @@ const GLchar *glyphFragmentSource =
     "out vec4 color;\n"
     "void main()                                  \n"
     "{                                            \n"
-    "   vec4 sampled = vec4(1.0, 1.0, 1.0, texture(text, textureCoords).r);"
+    "   vec4 sampled = vec4(1.0, 1.0, 1.0, texture(text, textureCoords).a);"
     // "   gl_FragColor = vec4(gl_FragCoord.x/640.0, gl_FragCoord.y/480.0, .5, 1.0) * sampled;\n"
     // "   color = vec4(gl_FragCoord.x/640.0, gl_FragCoord.y/480.0, .5, 1.0) * sampled;\n"
-    "   color = vec4(texture(text, textureCoords).rg, 0.3, 1.0); \n"
+    "   color = vec4(texture(text, textureCoords).a, 0.1, 0.1, 1.0); \n"
     "}                                            \n";
 
 // ugly GLOBALLY-SCOPED variables...
@@ -91,7 +91,7 @@ SDL_Window *window;
 
 GLint ortho_location;
 GLint otrho_glyph_location;
-glm::mat4x4 ortho = glm::ortho(0.0f, 640.0f, 480.0f, 0.0f, -1.0f, 1.0f);
+glm::mat4x4 ortho = glm::ortho(0.0f, 640.0f, 0.0f, 480.0f, -1.0f, 1.0f);
 
 GLint triangle_program;
 GLint glyph_program;
@@ -139,11 +139,11 @@ void invalidate_glyph(Character *glyph)
 {
     printf("Drawing glyph...\n");
 
-    GLfloat xpos = 100 + glyph->offset.x * 2;
-    GLfloat ypos = 100 - (glyph->size.y - glyph->size.y) * 2;
+    GLfloat xpos = 100 + glyph->offset.x;
+    GLfloat ypos = 100 - (glyph->size.y - glyph->size.y);
 
-    GLfloat w = glyph->size.x * 2;
-    GLfloat h = glyph->size.y * 2;
+    GLfloat w = glyph->size.x;
+    GLfloat h = glyph->size.y;
     // Update VBO for each character
     GLfloat vertices[6][4] = {
         {xpos, ypos + h, 0.0, 0.0},
@@ -181,8 +181,8 @@ void invalidate_glyph(Character *glyph)
 extern "C" void EMSCRIPTEN_KEEPALIVE toggle_background_color()
 {
     background = !background;
-    invalidate_triangle();
-    // invalidate_glyph(test_character);
+    // invalidate_triangle();
+    invalidate_glyph(test_character);
 }
 
 extern "C" void EMSCRIPTEN_KEEPALIVE draw_triangle(float x, float y)
@@ -190,8 +190,8 @@ extern "C" void EMSCRIPTEN_KEEPALIVE draw_triangle(float x, float y)
     vertices[2] = x;
     vertices[3] = y;
 
-    invalidate_triangle();
-    // invalidate_glyph(test_character);
+    // invalidate_triangle();
+    invalidate_glyph(test_character);
 }
 
 #endif
@@ -279,13 +279,15 @@ int main(int argc, char *argv[])
 
 #else
 
-    // SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
-
     SDL_GLContext gl_context = SDL_GL_CreateContext(window);
     SDL_GL_MakeCurrent(window, gl_context);
     glDepthMask(false);
 
     glewInit();
+
+    char* version = (char*)glGetString(GL_VERSION);
+    printf("Runinng version: %s", version);
+
 #endif
 
     // Create a Vertex Buffer Object and copy the vertex data to it
@@ -313,9 +315,9 @@ int main(int argc, char *argv[])
     FT_Face face;
     FT_New_Face(ft, "fonts/arial.ttf", 0, &face);
 
-    FT_Set_Pixel_Sizes(face, 0, 48);
+    FT_Set_Pixel_Sizes(face, 0, 128);
 
-    FT_Load_Char(face, 'X', FT_LOAD_RENDER);
+    FT_Load_Char(face, 'a', FT_LOAD_RENDER);
 
     printf("Face of X built.. : %d by %d\n", face->glyph->bitmap.width, face->glyph->bitmap.rows);
 
@@ -326,7 +328,7 @@ int main(int argc, char *argv[])
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture);
 
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, face->glyph->bitmap.width, face->glyph->bitmap.rows, 0, GL_RGB8, GL_UNSIGNED_BYTE, face->glyph->bitmap.buffer);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, face->glyph->bitmap.width, face->glyph->bitmap.rows, 0, GL_ALPHA, GL_UNSIGNED_BYTE, face->glyph->bitmap.buffer);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -362,10 +364,7 @@ int main(int argc, char *argv[])
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
-
-
-    char* version = (char*)glGetString(GL_VERSION);
-    printf("Runinng version: %s", version);
+    
 
 // LOOP FOR DESKTOP VERSION
 #ifndef __EMS__
@@ -383,7 +382,8 @@ int main(int argc, char *argv[])
             }
         }
 
-        invalidate_triangle();
+        // invalidate_triangle();
+        invalidate_glyph(test_character);
     }
 #endif
 
