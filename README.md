@@ -1,6 +1,7 @@
-# EMGL BOILERPLATE #
+# EMGL BOILERPLATE /w DESKTOP COMPILATION #
 
 Fully working C++ -> WebGL (Web assembly) emscripten boilerplate 
+- DESKTOP SDL2 COMPILATION!
 - ES 3.0 based
 - Working antialiasing
 - Mouse input (cross-language function calls)
