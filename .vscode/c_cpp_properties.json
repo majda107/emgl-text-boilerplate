@@ -8,7 +8,8 @@
                 "C:\\MinGW\\lib\\gcc\\mingw32\\6.3.0\\include\\c++\\mingw32",
                 "C:\\Program Files\\emsdk\\upstream\\emscripten\\system\\include",
                 "C:\\Users\\majda\\.emscripten_cache\\wasm\\include\\SDL2",
-                "C:\\MinGW\\lib\\gcc\\mingw32\\6.3.0\\include\\c++\\glm"
+                "C:\\MinGW\\lib\\gcc\\mingw32\\6.3.0\\include\\c++\\glm",
+                "C:\\Users\\majda\\.emscripten_cache\\wasm\\ports-builds\\freetype\\include"
             ],
             "defines": [
                 "_DEBUG",
