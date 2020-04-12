@@ -21,7 +21,7 @@ all:
 	make main
 
 main: $(SRC)
-	$(EMXX) $(EMXXFLAGS) $(SRC) -o $(BIN)/index.js $(INCLUDE_PATHS) $(PRELOAD) 
+	$(EMXX) $(EMXXFLAGS) $(SRC) -o $(BIN)/index.js $(INCLUDE_PATHS) $(PRELOAD) -D __EMS__
 
 clean:
 	@rm -fr $(BIN)

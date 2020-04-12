@@ -241,9 +241,12 @@ GLuint create_shader_program(const GLchar *vertex_source, const GLchar *fragment
 
 int main(int argc, char *argv[])
 {
+    SDL_Init(SDL_INIT_VIDEO);
+
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
+    // SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
     SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
@@ -358,6 +361,11 @@ int main(int argc, char *argv[])
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, 0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
+
+
+
+    char* version = (char*)glGetString(GL_VERSION);
+    printf("Runinng version: %s", version);
 
 // LOOP FOR DESKTOP VERSION
 #ifndef __EMS__
