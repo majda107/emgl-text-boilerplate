@@ -4,7 +4,6 @@
 #include <vector>
 #include <string>
 
-
 // #define __EMS__
 
 #ifdef __EMS__
@@ -23,14 +22,12 @@
 
 #endif
 
-
-
 #include <glm/mat4x4.hpp>
 #include <glm/gtc/matrix_transform.hpp> // glm::ortho
 #include <glm/gtc/type_ptr.hpp>         // glm::value_ptr
 
-// #include <ft2build.h>
-// #include FT_FREETYPE_H
+#include <ft2build.h>
+#include FT_FREETYPE_H
 
 struct Character
 {
@@ -279,6 +276,8 @@ int main(int argc, char *argv[])
 
 #else
 
+    // SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
+
     SDL_GLContext gl_context = SDL_GL_CreateContext(window);
     SDL_GL_MakeCurrent(window, gl_context);
     glDepthMask(false);
@@ -305,52 +304,50 @@ int main(int argc, char *argv[])
     glEnable(GL_ALPHA);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    // FT_Library ft;
-    // FT_Init_FreeType(&ft);
+    FT_Library ft;
+    FT_Init_FreeType(&ft);
 
-    // FT_Face face;
-    // FT_New_Face(ft, "fonts/arial.ttf", 0, &face);
+    FT_Face face;
+    FT_New_Face(ft, "fonts/arial.ttf", 0, &face);
 
-    // FT_Set_Pixel_Sizes(face, 0, 48);
+    FT_Set_Pixel_Sizes(face, 0, 48);
 
-    // FT_Load_Char(face, 'X', FT_LOAD_RENDER);
+    FT_Load_Char(face, 'X', FT_LOAD_RENDER);
 
-    // printf("Face of X built.. : %d by %d\n", face->glyph->bitmap.width, face->glyph->bitmap.rows);
+    printf("Face of X built.. : %d by %d\n", face->glyph->bitmap.width, face->glyph->bitmap.rows);
 
-    // // GL STUFF
-    // glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    // GL STUFF
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-    // GLuint texture;
-    // glGenTextures(1, &texture);
-    // glBindTexture(GL_TEXTURE_2D, texture);
+    GLuint texture;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
 
-    // glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, face->glyph->bitmap.width, face->glyph->bitmap.rows, 0, GL_RGB8, GL_UNSIGNED_BYTE, face->glyph->bitmap.buffer);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, face->glyph->bitmap.width, face->glyph->bitmap.rows, 0, GL_RGB8, GL_UNSIGNED_BYTE, face->glyph->bitmap.buffer);
 
-    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    // test_character = new Character();
-    // test_character->texture_id = texture;
-    // test_character->size = glm::ivec2(face->glyph->bitmap.width, face->glyph->bitmap.rows);
-    // test_character->offset = glm::ivec2(face->glyph->bitmap_left, face->glyph->bitmap_top);
-    // test_character->advance = face->glyph->advance.x;
+    test_character = new Character();
+    test_character->texture_id = texture;
+    test_character->size = glm::ivec2(face->glyph->bitmap.width, face->glyph->bitmap.rows);
+    test_character->offset = glm::ivec2(face->glyph->bitmap_left, face->glyph->bitmap_top);
+    test_character->advance = face->glyph->advance.x;
 
-    // glGenVertexArrays(1, &glyphVAO);
-    // glGenBuffers(1, &glyphVBO);
-    // glBindVertexArray(glyphVAO);
-    // glBindBuffer(GL_ARRAY_BUFFER, glyphVBO);
-    // glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 6 * 4, NULL, GL_DYNAMIC_DRAW);
-    // glEnableVertexAttribArray(0);
-    // glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), 0);
-    // glBindBuffer(GL_ARRAY_BUFFER, 0);
-    // glBindVertexArray(0);
+    glGenVertexArrays(1, &glyphVAO);
+    glGenBuffers(1, &glyphVBO);
+    glBindVertexArray(glyphVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, glyphVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 6 * 4, NULL, GL_DYNAMIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), 0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
 
-    // FT_Done_Face(face);
-    // FT_Done_FreeType(ft);
-
-
+    FT_Done_Face(face);
+    FT_Done_FreeType(ft);
 
     glGenVertexArrays(1, &triangleVAO);
     glGenBuffers(1, &triangleVBO);
@@ -361,7 +358,6 @@ int main(int argc, char *argv[])
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, 0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
-
 
 // LOOP FOR DESKTOP VERSION
 #ifndef __EMS__
