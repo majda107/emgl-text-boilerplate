@@ -8,7 +8,7 @@ Fully working C++ -> WebGL (Web assembly) emscripten boilerplate
 - using SDL2
 - detailed Windows setup
 
-![alt text](images/screen.png "Screenshot 1")
+![alt text](https://i.imgur.com/vJoTmlm.png "Screenshot 1")
 
 ## Building the project... ##
 `.wasm` and `.js` file is taken **from bin folder!**
