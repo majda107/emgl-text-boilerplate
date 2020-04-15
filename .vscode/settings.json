@@ -2,6 +2,8 @@
     "files.associations": {
         "__config": "cpp",
         "__locale": "cpp",
-        "vector": "cpp"
+        "vector": "cpp",
+        "unordered_map": "cpp",
+        "string": "cpp"
     }
 }

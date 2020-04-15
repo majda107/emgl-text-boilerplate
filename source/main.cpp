@@ -1,41 +1,10 @@
-#include <stdio.h>
+#include "Common.h"
 
-#include <stdlib.h>
-#include <vector>
+#include "Character.h"
+#include "CharacterSet.h"
+#include "Loaders/Loader.h"
+
 #include <string>
-
-// #define __EMS__
-
-#ifdef __EMS__
-#include <emscripten.h>
-#include <emscripten/html5.h>
-#include <SDL.h>
-#include <GLES3/gl3.h>
-#else
-
-#define SDL_MAIN_HANDLED
-#define main SDL_main
-
-#include <SDL.h>
-#include <GL/glew.h>
-#include <SDL_opengl.h>
-
-#endif
-
-#include <glm/mat4x4.hpp>
-#include <glm/gtc/matrix_transform.hpp> // glm::ortho
-#include <glm/gtc/type_ptr.hpp>         // glm::value_ptr
-
-#include <ft2build.h>
-#include FT_FREETYPE_H
-
-struct Character
-{
-    GLuint texture_id;
-    glm::ivec2 size;
-    glm::ivec2 offset;
-    GLuint advance;
-};
 
 // Shader sources
 
@@ -63,10 +32,12 @@ const GLchar *glyphVertexSource =
     "#version 300 es \n"
     "layout (location = 0) in vec4 position;                     \n"
     "uniform mat4 orthoMatrix;\n"
+    "uniform mat4 characterMatrix;\n"
     "out vec2 textureCoords; \n"
     "void main()                                  \n"
     "{                                            \n"
-    "  gl_Position = orthoMatrix * vec4(position.xy, 0.0, 1.0);     \n"
+    "  vec4 worldPosition = characterMatrix * vec4(position.xy, .0, 1.0); \n"
+    "  gl_Position = orthoMatrix * worldPosition;     \n"
     "  textureCoords = position.zw; \n"
     "}                                            \n";
 
@@ -79,10 +50,11 @@ const GLchar *glyphFragmentSource =
     "out vec4 color;\n"
     "void main()                                  \n"
     "{                                            \n"
-    "   vec4 sampled = vec4(1.0, 1.0, 1.0, texture(text, textureCoords).a);"
+    // "   vec4 sampled = vec4(1.0, 1.0, 1.0, texture(text, textureCoords).a);"
     // "   gl_FragColor = vec4(gl_FragCoord.x/640.0, gl_FragCoord.y/480.0, .5, 1.0) * sampled;\n"
-    // "   color = vec4(gl_FragCoord.x/640.0, gl_FragCoord.y/480.0, .5, 1.0) * sampled;\n"
-    "   color = vec4(texture(text, textureCoords).a, 0.1, 0.1, 1.0); \n"
+    "   color = vec4(gl_FragCoord.x/640.0, gl_FragCoord.y/480.0, .5, 1.0);\n"
+    // "   color = vec4(texture(text, textureCoords).a, 0.1, 0.1, 1.0); \n"
+    "   color.rgb = mix(vec3(.0, .0, .0).xyz, color.rgb, texture(text, textureCoords).a); \n"
     "}                                            \n";
 
 // ugly GLOBALLY-SCOPED variables...
@@ -93,6 +65,9 @@ GLint ortho_location;
 GLint otrho_glyph_location;
 glm::mat4x4 ortho = glm::ortho(0.0f, 640.0f, 0.0f, 480.0f, -1.0f, 1.0f);
 
+GLint character_matrix_location;
+glm::mat4x4 character_matrix = glm::mat4x4(1.0);
+
 GLint triangle_program;
 GLint glyph_program;
 
@@ -102,10 +77,10 @@ GLfloat vertices[] = {0.0f, 0.0f, 100.0f, 100.0f, 300.0f, 0.0f};
 GLuint triangleVAO;
 GLuint triangleVBO;
 
-GLuint glyphVAO;
-GLuint glyphVBO;
+CharacterSet *set;
+Loader *loader;
 
-Character *test_character;
+std::string test_str = "test string";
 
 // magic that draws triangle
 void invalidate_triangle()
@@ -135,39 +110,32 @@ void invalidate_triangle()
     SDL_GL_SwapWindow(window);
 }
 
-void invalidate_glyph(Character *glyph)
+void invalidate_string(std::string string)
 {
-    printf("Drawing glyph...\n");
-
-    GLfloat xpos = 100 + glyph->offset.x;
-    GLfloat ypos = 100 - (glyph->size.y - glyph->size.y);
-
-    GLfloat w = glyph->size.x;
-    GLfloat h = glyph->size.y;
-    // Update VBO for each character
-    GLfloat vertices[6][4] = {
-        {xpos, ypos + h, 0.0, 0.0},
-        {xpos, ypos, 0.0, 1.0},
-        {xpos + w, ypos, 1.0, 1.0},
-
-        {xpos, ypos + h, 0.0, 0.0},
-        {xpos + w, ypos, 1.0, 1.0},
-        {xpos + w, ypos + h, 1.0, 0.0}};
+    character_matrix = glm::mat4x4(1.0);
+    character_matrix *= glm::translate(character_matrix, glm::vec3(10, 200, 0));
 
     glUseProgram(glyph_program);
 
     glActiveTexture(GL_TEXTURE0);
-    glBindVertexArray(glyphVAO);
-
-    glBindTexture(GL_TEXTURE_2D, glyph->texture_id);
-
-    glBindBuffer(GL_ARRAY_BUFFER, glyphVBO);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-
     glUniformMatrix4fv(otrho_glyph_location, 1, 0, glm::value_ptr(ortho));
 
-    glDrawArrays(GL_TRIANGLES, 0, 6);
+    // int offset = 0;
+    for (auto it = string.begin(); it != string.end(); it++)
+    {
+        auto glyph = set->character_map[*it];
+
+        // printf("Drawing %c\n", *it);
+
+        glUniformMatrix4fv(character_matrix_location, 1, 0, glm::value_ptr(character_matrix));
+
+        glBindVertexArray(glyph->model->id);
+        glBindTexture(GL_TEXTURE_2D, glyph->texture_id);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+
+        character_matrix *= glm::translate(glm::mat4x4(1.0), glm::vec3((glyph->advance >> 6 ), 0, 0));
+        // offset += glyph->advance;
+    }
 
     glBindVertexArray(0);
 
@@ -176,13 +144,18 @@ void invalidate_glyph(Character *glyph)
     SDL_GL_SwapWindow(window);
 }
 
+void invalidate()
+{
+    glClear(GL_COLOR_BUFFER_BIT);
+    invalidate_string(test_str);
+}
+
 #ifdef __EMS__
 // external functions called by EMSCRIPTEN from javascript (index.html <script> tag) file using CWrap
 extern "C" void EMSCRIPTEN_KEEPALIVE toggle_background_color()
 {
     background = !background;
-    // invalidate_triangle();
-    invalidate_glyph(test_character);
+    invalidate();
 }
 
 extern "C" void EMSCRIPTEN_KEEPALIVE draw_triangle(float x, float y)
@@ -190,8 +163,18 @@ extern "C" void EMSCRIPTEN_KEEPALIVE draw_triangle(float x, float y)
     vertices[2] = x;
     vertices[3] = y;
 
-    // invalidate_triangle();
-    invalidate_glyph(test_character);
+    invalidate();
+}
+
+extern "C" void EMSCRIPTEN_KEEPALIVE append_letter(char letter)
+{
+    test_str.push_back(letter);
+}
+
+extern "C" void EMSCRIPTEN_KEEPALIVE remove_letter()
+{
+    if(test_str.size() <= 0) return;
+    test_str.pop_back();
 }
 
 #endif
@@ -239,6 +222,13 @@ GLuint create_shader_program(const GLchar *vertex_source, const GLchar *fragment
     return program;
 }
 
+void clean()
+{
+    delete set;
+    delete loader;
+}
+
+
 int main(int argc, char *argv[])
 {
     SDL_Init(SDL_INIT_VIDEO);
@@ -285,7 +275,7 @@ int main(int argc, char *argv[])
 
     glewInit();
 
-    char* version = (char*)glGetString(GL_VERSION);
+    char *version = (char *)glGetString(GL_VERSION);
     printf("Runinng version: %s", version);
 
 #endif
@@ -303,56 +293,21 @@ int main(int argc, char *argv[])
 
     glyph_program = create_shader_program(glyphVertexSource, glyphFragmentSource);
     otrho_glyph_location = glGetUniformLocation(glyph_program, "orthoMatrix");
+    character_matrix_location = glGetUniformLocation(glyph_program, "characterMatrix");
 
     // set GL viewport
     glViewport(0, 0, 640, 480);
     glEnable(GL_ALPHA);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    FT_Library ft;
-    FT_Init_FreeType(&ft);
 
-    FT_Face face;
-    FT_New_Face(ft, "fonts/arial.ttf", 0, &face);
+    loader = new Loader();
+    set = new CharacterSet("fonts/arial.ttf", 128, loader);
 
-    FT_Set_Pixel_Sizes(face, 0, 128);
+    for(int i = 0; i < 128; i++)
+        set->generate_character((char)i);
 
-    FT_Load_Char(face, 'a', FT_LOAD_RENDER);
 
-    printf("Face of X built.. : %d by %d\n", face->glyph->bitmap.width, face->glyph->bitmap.rows);
-
-    // GL STUFF
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-
-    GLuint texture;
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture);
-
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, face->glyph->bitmap.width, face->glyph->bitmap.rows, 0, GL_ALPHA, GL_UNSIGNED_BYTE, face->glyph->bitmap.buffer);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    test_character = new Character();
-    test_character->texture_id = texture;
-    test_character->size = glm::ivec2(face->glyph->bitmap.width, face->glyph->bitmap.rows);
-    test_character->offset = glm::ivec2(face->glyph->bitmap_left, face->glyph->bitmap_top);
-    test_character->advance = face->glyph->advance.x;
-
-    glGenVertexArrays(1, &glyphVAO);
-    glGenBuffers(1, &glyphVBO);
-    glBindVertexArray(glyphVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, glyphVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 6 * 4, NULL, GL_DYNAMIC_DRAW);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), 0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
-
-    FT_Done_Face(face);
-    FT_Done_FreeType(ft);
 
     glGenVertexArrays(1, &triangleVAO);
     glGenBuffers(1, &triangleVBO);
@@ -363,8 +318,6 @@ int main(int argc, char *argv[])
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, 0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
-
-    
 
 // LOOP FOR DESKTOP VERSION
 #ifndef __EMS__
@@ -382,9 +335,10 @@ int main(int argc, char *argv[])
             }
         }
 
-        // invalidate_triangle();
-        invalidate_glyph(test_character);
+        invalidate();
     }
+
+    clean();
 #endif
 
     return EXIT_SUCCESS;

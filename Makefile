@@ -16,7 +16,7 @@ EMXXFLAGS := -std=c++11 -s WASM=1 -s USE_SDL=2 -s USE_WEBGL2=1 -O3 -s USE_FREETY
 EMXX_INCLUDE_PATHS := -I"C:\MinGW\lib\gcc\mingw32\6.3.0\include\c++\glm" 
 
 CXX := g++
-CXXFLAGS := -Wall
+CXXFLAGS := -Wall -g
 CXXLIBS := -lfreetype -lmingw32 -lSDL2main -lSDL2 -lglew32 -lopengl32 -lglu32
 CXX_LIB_PATHS := -L"C:\libsdl\lib" -L"C:\libglew-2.1.0\lib\Release\Win32" -L"C:\libfreetype-2.9\objs\.libs" 
 CXX_INCLUDE_PATHS := $(EMXX_INCLUDE_PATHS) -I"C:\libsdl\include\SDL2" -I"C:\libglew-2.1.0\include" -I"C:\libfreetype-2.9\include"
@@ -32,7 +32,10 @@ WEB := web
 WEB_BIN := web_bin
 
 # source files
-SRC := $(wildcard $(SOURCE)/*.cpp)
+# SRC := $(wildcard $(SOURCE)**/*.cpp)
+SRC := $(wildcard $(SOURCE)/*.cpp $(SOURCE)/*/*.cpp $(SOURCE)/*/*/*.cpp)
+# SRC := $(shell find . -name "*.cpp")
+
 OBJ := $(patsubst $(SOURCE)%.cpp, $(BIN)%.o, $(SRC))
 WEB_OBJ := $(patsubst $(SOURCE)%.cpp, $(WEB_BIN)%.o, $(SRC))
 
@@ -48,6 +51,7 @@ main: $(OBJ)
 
 $(BIN)/%.o: $(SOURCE)/%.cpp
 	@mkdir -p $(BIN)
+	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) -c $< $(CXX_LIB_PATHS) $(CXXLIBS) $(CXX_INCLUDE_PATHS) -Dmain=SDL_main -o $@
 
 # EMSCRIPTEN PART
@@ -56,6 +60,7 @@ web: $(WEB_OBJ)
 
 $(WEB_BIN)/%.o: $(SOURCE)/%.cpp
 	@mkdir -p $(WEB_BIN)
+	@mkdir -p $(dir $@)
 	$(EMXX) $(EMXXFLAGS) -c $< -o $@ $(EMXX_INCLUDE_PATHS) $(PRELOAD) -D __EMS__
 
 run:

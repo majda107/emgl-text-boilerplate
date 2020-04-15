@@ -37,6 +37,22 @@
             drawTriangle(x, y)
         })
 
+        window.addEventListener('keypress', (e) => {
+            if (e.keyCode > 31 && e.keyCode < 127) {
+                console.log(`Appending ${e.keyCode}`)
+                _append_letter(e.keyCode)
+                _draw_triangle(0, 0)
+            }
+        })
+
+        window.addEventListener('keydown', e => {
+            if (e.keyCode == 8) {
+                console.log("Removing letter")
+                _remove_letter()
+                _draw_triangle(0, 0)
+            }
+        })
+
         function drawTriangle(x = 0.5, y = 0.2) {
             _draw_triangle(x, y)
         }
