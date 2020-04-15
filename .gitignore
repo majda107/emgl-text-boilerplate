@@ -1,3 +1,9 @@
 /bin
+/web_bin
+
 *.dll
 *.exe
+
+*.wasm
+*.js
+*.data
