@@ -2,6 +2,7 @@
 
 Fully working C++ -> WebGL (Web assembly) emscripten boilerplate 
 - DESKTOP SDL2 COMPILATION!
+- Working Freetype
 - ES 3.0 based
 - Working antialiasing
 - Mouse input (cross-language function calls)
@@ -13,8 +14,7 @@ Fully working C++ -> WebGL (Web assembly) emscripten boilerplate
 ## Building the project... ##
 `.wasm` and `.js` file is taken **from bin folder!**
 
-- using make... `make` or `make all` from emsdk shell
-- using emcc... `emcc ..\source\main.cpp -std=c++11 -s WASM=1 -s USE_SDL=2 -s USE_WEBGL2=1 -O3 -o index.js -I"<GLM PATH>"` from `\bin` folder
+- using make... `make` or `make web` from emsdk shell
 
 
 ## Setup ##
@@ -44,17 +44,39 @@ Setup done on windows (will work on other OSes, but you have to find tools from 
 1. Install [C++ extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpptools)
 2. Edit `c_cpp_properties.json`
 3. Include all needed paths... (see `.vscode/c_cpp_properties.json` for further reference)
+
     - c++ include path for `stdio` and stuff *(version may change)* `"C:\\MinGW\\lib\\gcc\\mingw32\\6.3.0\\include\\c++"`
     - path for c++ `bits/..` *(needed by dependecies, version may change)* `"C:\\MinGW\\lib\\gcc\\mingw32\\6.3.0\\include\\c++\\mingw32"`
-    - path for emscripten includes like `emscripten.h` / `emscripten/html5.h` `"C:\\Program Files\\emsdk\\upstream\\emscripten\\system\\include"`
-    - emscripten SDL2 include  **THIS IS CREATED AFTER COMPILING WITH USE_SDL=2 FLAG FOR THE FIRST TIME!!!** `"C:\\Users\\majda\\.emscripten_cache\\wasm\\include\\SDL2"`
+    - path for desktop SDL2 `"C:\\libsdl\\include\\SDL2"` (https://www.libsdl.org/download-2.0.php)
+    - path for GLEW wrangler *(gl calls)* `"C:\\libglew-2.1.0\\include"` (http://glew.sourceforge.net/)
+    - path for FreeType library `"C:\\libfreetype-2.9\\include"` (https://www.freetype.org/download.html)
     
     Additional libraries like `glm` **(needed by this example)**, you may also use other libs this way in future
     - my glm include path `C:\\MinGW\\lib\\gcc\\mingw32\\6.3.0\\include\\c++\\glm`
 
+
+4. **(OPTIONAL)** include paths for emscripten (see `.vscode/em_c_cpp_properties.json` for further reference)
+    - Use this, if you need to access specific things in emscripten...
+    - **EMSCRIPTEN PORTS LIKE SDL2 AND FREETYPE ARE GENERATED AFTER FIRST USE OF COMPILATION FLAG**
+
+    - path for emscripten specific things `C:\\Program Files\\emsdk\\upstream\\emscripten\\system\\include"`
+    - path for SDL2 *(includes gles with gl calls)* `"C:\\Users\\majda\\.emscripten_cache\\wasm\\include\\SDL2"`
+    - path for FreeType "C:\\Users\\majda\\.emscripten_cache\\wasm\\ports-builds\\freetype\\include"
+
+## Install needed libraries ##
+
+- needed **SDL2, GLEW** and **FreeType**
+
+- Great MinGW windows guide
+    http://www.multigesture.net/articles/how-to-upgrade-your-mingw-with-commonly-used-libraries/
+
+- You may use WSL to compile as well
+
 ## Code overview (antialiasing and other stuff) ## 
 
-1. Includes...
+**Not done yet!**
+
+1. Includes for **EMSCRIPTEN** - **DON'T USE THIS, USE DESKTOP SDL**
     - `#include <stdio.h>` and `#include <stdlib.h>` for `printf()` calls and other
     - `#include <emscripten.h>` for function binding and `#include <emscripten/html5.h>` for WebGL canvas context (enables antialiasing and stuf...)
     - `#include <SDL.h>` for all SDL2 calls
@@ -72,8 +94,13 @@ Setup done on windows (will work on other OSes, but you have to find tools from 
 4. Manual compilation
     - use `emcc main.cpp -std=c++11 -s WASM=1 -s USE_SDL=2 -s USE_WEBGL2=1 -O3 -o index.js -I"<LIBS LIKE GLM PATH>"` command from **emsdk shell* to compile code manually without any makefile
 
+### Usefull links ###
+- MinGW libaries: http://www.multigesture.net/articles/how-to-upgrade-your-mingw-with-commonly-used-libraries/
+- Emscripten ports: https://github.com/emscripten-ports
 
-## Inspired by... ##
+### Inspired by... ###
+- https://github.com/majda107/emgl-boilerplate
+
 - https://github.com/krogank9/sdl_ogl_tests/blob/master/vg/src/main.cpp
 - https://gist.github.com/derofim/261630cc9eea7fce431710dc2e97b094
 - https://github.com/timhutton/opengl-canvas-wasm
