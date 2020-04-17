@@ -5,6 +5,8 @@
 #include "Loaders/Loader.h"
 #include "Handlers/StateHandler.h"
 
+#include "Shaders/CharacterShader.h"
+
 #include <string>
 
 // Shader sources
@@ -43,6 +45,7 @@ const GLchar *glyphFragmentSource =
     "   color.rgb = mix(vec3(.0, .0, .0).xyz, color.rgb, letter_sample); \n"
     "}                                            \n";
 
+
 // ugly GLOBALLY-SCOPED variables...
 
 int WIDTH = 1280;
@@ -52,14 +55,15 @@ int HEIGHT = 720;
 bool background = true;
 SDL_Window *window;
 
-GLint otrho_glyph_location;
+// GLint otrho_glyph_location;
 glm::mat4x4 ortho = glm::ortho(0.0f, (float)WIDTH, 0.0f, (float)HEIGHT, -1.0f, 1.0f);
 
-GLint character_matrix_location;
+// GLint character_matrix_location;
 glm::mat4x4 character_matrix = glm::mat4x4(1.0);
-GLint view_matrix_location;
+// GLint view_matrix_location;
 
-GLint glyph_program;
+// GLint glyph_program;
+CharacterShader *characterShader;
 
 CharacterSet *set;
 Loader *loader;
@@ -74,11 +78,13 @@ void invalidate_string(std::string string)
     character_matrix = glm::mat4x4(1.0);
     character_matrix *= glm::translate(character_matrix, glm::vec3(10, y, 0));
 
-    glUseProgram(glyph_program);
+    // glUseProgram(glyph_program);
+    // ShaderProgram::start();
+    characterShader->start();
 
     glActiveTexture(GL_TEXTURE0);
-    glUniformMatrix4fv(otrho_glyph_location, 1, 0, glm::value_ptr(ortho));
-    glUniformMatrix4fv(view_matrix_location, 1, 0, glm::value_ptr(state->mouse_handler.get_view_matrix()));
+    glUniformMatrix4fv(characterShader->ortho_matrix, 1, 0, glm::value_ptr(ortho));
+    glUniformMatrix4fv(characterShader->view_matrix, 1, 0, glm::value_ptr(state->mouse_handler.get_view_matrix()));
 
     // int offset = 0;
     for (auto it = string.begin(); it != string.end(); it++)
@@ -94,7 +100,7 @@ void invalidate_string(std::string string)
 
         // printf("Drawing %c\n", *it);
 
-        glUniformMatrix4fv(character_matrix_location, 1, 0, glm::value_ptr(character_matrix));
+        glUniformMatrix4fv(characterShader->character_matrix, 1, 0, glm::value_ptr(character_matrix));
 
         glBindVertexArray(glyph->model->id);
         glBindTexture(GL_TEXTURE_2D, glyph->texture_id);
@@ -211,6 +217,7 @@ void clean()
     delete set;
     delete loader;
     delete state;
+    delete characterShader;
 }
 
 
@@ -269,10 +276,11 @@ int main(int argc, char *argv[])
     // Create a Vertex Buffer Object and copy the vertex data to it
 
 
-    glyph_program = create_shader_program(glyphVertexSource, glyphFragmentSource);
-    otrho_glyph_location = glGetUniformLocation(glyph_program, "orthoMatrix");
-    character_matrix_location = glGetUniformLocation(glyph_program, "characterMatrix");
-    view_matrix_location = glGetUniformLocation(glyph_program, "viewMatrix");
+    // glyph_program = create_shader_program(glyphVertexSource, glyphFragmentSource);
+    // otrho_glyph_location = glGetUniformLocation(glyph_program, "orthoMatrix");
+    // character_matrix_location = glGetUniformLocation(glyph_program, "characterMatrix");
+    // view_matrix_location = glGetUniformLocation(glyph_program, "viewMatrix");
+    characterShader = new CharacterShader(glyphVertexSource, glyphFragmentSource);
 
     // set GL viewport
     glViewport(0, 0, WIDTH, HEIGHT);
