@@ -15,7 +15,8 @@ public:
         printf("Character set constructor!\n");
         this->m_loader = loader;
 
-        FT_Init_FreeType(&(this->m_ft));
+        if (FT_Init_FreeType(&(this->m_ft)))
+            printf("FAILED TO INIT FREETYPE!\n");
     }
 
     ~CharacterSet()
@@ -38,10 +39,10 @@ public:
 
     void generate_character(char letter);
 
-    // void done()
-    // {
-    //     FT_Done_FreeType(this->m_ft);
-    // }
+    void done()
+    {
+        FT_Done_FreeType(this->m_ft);
+    }
 
     void clean();
 };

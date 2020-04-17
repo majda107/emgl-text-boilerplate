@@ -113,14 +113,13 @@ void invalidate_string(std::string string)
     glBindVertexArray(0);
 
     glUseProgram(0);
-
-    SDL_GL_SwapWindow(window);
 }
 
 void invalidate()
 {
     glClear(GL_COLOR_BUFFER_BIT);
     invalidate_string(test_str);
+    SDL_GL_SwapWindow(window);
 }
 
 #ifdef __EMS__
@@ -290,6 +289,11 @@ int main(int argc, char *argv[])
     state = new StateHandler();
     loader = new Loader();
     set = new CharacterSet("fonts/arial.ttf", 128, loader);
+
+    set->generate_character('a');
+
+    // FT_Done_FreeType(set->)
+    // set->done();
 
     for (int i = 0; i < 128; i++)
         set->generate_character((char)i);

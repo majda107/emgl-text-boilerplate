@@ -45,14 +45,15 @@ void CharacterSet::generate_model(Character *character)
 void CharacterSet::generate_character(char letter)
 {
     FT_Face face;
-    FT_New_Face(this->m_ft, "fonts/arial.ttf", 0, &face);
+    if(FT_New_Face(this->m_ft, "fonts/arial.ttf", 0, &face))
+        printf("FAILED TO INIT FACE IN FT!\n");
 
     // FT_Set_Pixel_Sizes(face, 0, 48);
     FT_Set_Pixel_Sizes(face, 0, 64);
 
     FT_Load_Char(face, letter, FT_LOAD_RENDER);
 
-    // printf("Face of X built.. : %d by %d\n", face->glyph->bitmap.width, face->glyph->bitmap.rows);
+    printf("Face of X built.. : %d by %d\n", face->glyph->bitmap.width, face->glyph->bitmap.rows);
 
     auto character = new Character;
     character->texture_id = this->generate_texture(face);

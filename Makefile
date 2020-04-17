@@ -31,6 +31,8 @@ BIN := bin
 WEB := web
 WEB_BIN := web_bin
 
+STATIC := fonts
+
 # source files
 # SRC := $(wildcard $(SOURCE)**/*.cpp)
 SRC := $(wildcard $(SOURCE)/*.cpp $(SOURCE)/*/*.cpp $(SOURCE)/*/*/*.cpp)
@@ -47,6 +49,7 @@ all:
 main: $(OBJ)
 	$(CXX) $(CXXFLAGS) $(OBJ) $(CXX_LIB_PATHS) $(CXXLIBS) $(CXX_INCLUDE_PATHS) -Dmain=SDL_main -o $(BIN)/main
 	@cp dll/* $(BIN)/
+	@cp -r $(STATIC) $(BIN)/
 
 
 $(BIN)/%.o: $(SOURCE)/%.cpp
