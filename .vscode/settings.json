@@ -4,6 +4,8 @@
         "__locale": "cpp",
         "vector": "cpp",
         "unordered_map": "cpp",
-        "string": "cpp"
+        "string": "cpp",
+        "*.tcc": "cpp",
+        "type_traits": "cpp"
     }
 }

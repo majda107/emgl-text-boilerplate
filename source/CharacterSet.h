@@ -12,6 +12,7 @@ class CharacterSet
 public:
     CharacterSet(const char *font, int height, Loader *loader)
     {
+        printf("Character set constructor!\n");
         this->m_loader = loader;
 
         FT_Init_FreeType(&(this->m_ft));

@@ -27,21 +27,20 @@
         canv.addEventListener('click', _toggle_background_color, false);
         canv.addEventListener('touchend', _toggle_background_color, false);
 
-        canv.addEventListener('mousemove', (e) => {
+        // canv.addEventListener('mousemove', (e) => {
 
-            let rect = canv.getBoundingClientRect()
+        //     let rect = canv.getBoundingClientRect()
 
-            let x = e.clientX - rect.left
-            let y = e.clientY - rect.top
+        //     let x = e.clientX - rect.left
+        //     let y = e.clientY - rect.top
 
-            drawTriangle(x, y)
-        })
+        //     drawTriangle(x, y)
+        // })
 
         window.addEventListener('keypress', (e) => {
             if (e.keyCode > 31 && e.keyCode < 127) {
                 console.log(`Appending ${e.keyCode}`)
                 _append_letter(e.keyCode)
-                _draw_triangle(0, 0)
             }
         })
 
@@ -49,7 +48,6 @@
             if (e.keyCode == 8) {
                 console.log("Removing letter")
                 _remove_letter()
-                _draw_triangle(0, 0)
             }
         })
 
@@ -57,12 +55,42 @@
             _draw_triangle(x, y)
         }
 
+        function canvasXY(e) {
+            let rect = canv.getBoundingClientRect()
+
+            let x = rect.left - e.clientX 
+            let y = e.clientY - rect.top
+
+            return { x: x, y: y }
+        }
+
+
+        canv.addEventListener('mousedown', e => {
+            let xy = canvasXY(e)
+            _mouse_down(xy.x, xy.y)
+        })
+
+        canv.addEventListener('mouseup', e => {
+            let xy = canvasXY(e)
+            _mouse_up(xy.x, xy.y)
+        })
+
+        canv.addEventListener('mousemove', e => {
+            let xy = canvasXY(e)
+            _mouse_move(xy.x, xy.y)
+        })
+
+        let scale = 1.0
+        canv.addEventListener('wheel', e => {
+            scale += e.deltaY * -0.001
+            _mouse_zoom(scale)
+        })
+
     </script>
 
     <!-- U may completely delete this trash description ... -->
     <div>
-        <p>Click the canvas to change the background color.</p>
-        <p>Move your mouse over canvas to change shape of the triangle.</p>
+        <p>Type on keyboard to change text, drag / zoom to position canvas</p>
         <hr>
         <p>Simple Antialiased OpenGL ES 3.0 Emscripten WebAssembly example</p>
         <p>Source code: <a

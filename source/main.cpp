@@ -3,41 +3,25 @@
 #include "Character.h"
 #include "CharacterSet.h"
 #include "Loaders/Loader.h"
+#include "Handlers/StateHandler.h"
 
 #include <string>
 
 // Shader sources
 
-// Vertex shader
-const GLchar *vertexSource =
-    "#version 300 es\n"
-    "layout (location = 0) in vec4 position;                     \n"
-    "uniform mat4 orthoMatrix;\n"
-    "void main()                                  \n"
-    "{                                            \n"
-    "  gl_Position = orthoMatrix * vec4(position.xyz, 1.0);     \n"
-    "}                                            \n";
-
-// Fragment/pixel shader
-const GLchar *fragmentSource =
-    "#version 300 es\n"
-    "precision mediump float;\n"
-    "out vec4 color;"
-    "void main()                                  \n"
-    "{                                            \n"
-    "   color = vec4(gl_FragCoord.x/640.0, gl_FragCoord.y/480.0, .5, 1.0);\n"
-    "}                                            \n";
+// Vertex shader;
 
 const GLchar *glyphVertexSource =
     "#version 300 es \n"
     "layout (location = 0) in vec4 position;                     \n"
     "uniform mat4 orthoMatrix;\n"
     "uniform mat4 characterMatrix;\n"
+    "uniform mat4 viewMatrix;"
     "out vec2 textureCoords; \n"
     "void main()                                  \n"
     "{                                            \n"
     "  vec4 worldPosition = characterMatrix * vec4(position.xy, .0, 1.0); \n"
-    "  gl_Position = orthoMatrix * worldPosition;     \n"
+    "  gl_Position = orthoMatrix * viewMatrix * worldPosition;     \n"
     "  textureCoords = position.zw; \n"
     "}                                            \n";
 
@@ -52,78 +36,61 @@ const GLchar *glyphFragmentSource =
     "{                                            \n"
     // "   vec4 sampled = vec4(1.0, 1.0, 1.0, texture(text, textureCoords).a);"
     // "   gl_FragColor = vec4(gl_FragCoord.x/640.0, gl_FragCoord.y/480.0, .5, 1.0) * sampled;\n"
-    "   color = vec4(gl_FragCoord.x/640.0, gl_FragCoord.y/480.0, .5, 1.0);\n"
+    "   float letter_sample = texture(text, textureCoords).a;"
+    "   if(letter_sample < 0.1f) discard;"
+    "   color = vec4(gl_FragCoord.x/1280.0, gl_FragCoord.y/720.0, .5, 1.0);\n"
     // "   color = vec4(texture(text, textureCoords).a, 0.1, 0.1, 1.0); \n"
-    "   color.rgb = mix(vec3(.0, .0, .0).xyz, color.rgb, texture(text, textureCoords).a); \n"
+    "   color.rgb = mix(vec3(.0, .0, .0).xyz, color.rgb, letter_sample); \n"
     "}                                            \n";
 
 // ugly GLOBALLY-SCOPED variables...
+
+int WIDTH = 1280;
+int HEIGHT = 720;
+
+
 bool background = true;
 SDL_Window *window;
 
-GLint ortho_location;
 GLint otrho_glyph_location;
-glm::mat4x4 ortho = glm::ortho(0.0f, 640.0f, 0.0f, 480.0f, -1.0f, 1.0f);
+glm::mat4x4 ortho = glm::ortho(0.0f, (float)WIDTH, 0.0f, (float)HEIGHT, -1.0f, 1.0f);
 
 GLint character_matrix_location;
 glm::mat4x4 character_matrix = glm::mat4x4(1.0);
+GLint view_matrix_location;
 
-GLint triangle_program;
 GLint glyph_program;
-
-// GLfloat vertices[] = {0.0f, 0.5f, 0.5f, -0.5f, -0.5f, -0.5f}; // UNIFORM TRIANGLE
-GLfloat vertices[] = {0.0f, 0.0f, 100.0f, 100.0f, 300.0f, 0.0f};
-
-GLuint triangleVAO;
-GLuint triangleVBO;
 
 CharacterSet *set;
 Loader *loader;
+StateHandler *state;
 
 std::string test_str = "test string";
 
-// magic that draws triangle
-void invalidate_triangle()
-{
-    // glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-    glUseProgram(triangle_program);
-
-    glBindVertexArray(triangleVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, triangleVBO);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(GLfloat) * 2 * 3, vertices);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-    if (background)
-        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-    else
-        glClearColor(0.9f, 0.9f, 0.9f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
-
-    glUniformMatrix4fv(ortho_location, 1, 0, glm::value_ptr(ortho));
-
-    glDrawArrays(GL_TRIANGLES, 0, 3);
-
-    glBindVertexArray(0);
-
-    glUseProgram(0);
-
-    SDL_GL_SwapWindow(window);
-}
 
 void invalidate_string(std::string string)
 {
+    int y = 200;
     character_matrix = glm::mat4x4(1.0);
-    character_matrix *= glm::translate(character_matrix, glm::vec3(10, 200, 0));
+    character_matrix *= glm::translate(character_matrix, glm::vec3(10, y, 0));
 
     glUseProgram(glyph_program);
 
     glActiveTexture(GL_TEXTURE0);
     glUniformMatrix4fv(otrho_glyph_location, 1, 0, glm::value_ptr(ortho));
+    glUniformMatrix4fv(view_matrix_location, 1, 0, glm::value_ptr(state->mouse_handler.get_view_matrix()));
 
     // int offset = 0;
     for (auto it = string.begin(); it != string.end(); it++)
     {
         auto glyph = set->character_map[*it];
+
+        if(*it == '\n')
+        {
+            y += glyph->advance.y >> 6;
+            character_matrix = glm::translate(glm::mat4x4(1.0), glm::vec3(10, y, 0));
+            return;
+        }
 
         // printf("Drawing %c\n", *it);
 
@@ -133,7 +100,7 @@ void invalidate_string(std::string string)
         glBindTexture(GL_TEXTURE_2D, glyph->texture_id);
         glDrawArrays(GL_TRIANGLES, 0, 6);
 
-        character_matrix *= glm::translate(glm::mat4x4(1.0), glm::vec3((glyph->advance >> 6 ), 0, 0));
+        character_matrix *= glm::translate(glm::mat4x4(1.0), glm::vec3((glyph->advance.x >> 6), 0, 0));
         // offset += glyph->advance;
     }
 
@@ -158,14 +125,6 @@ extern "C" void EMSCRIPTEN_KEEPALIVE toggle_background_color()
     invalidate();
 }
 
-extern "C" void EMSCRIPTEN_KEEPALIVE draw_triangle(float x, float y)
-{
-    vertices[2] = x;
-    vertices[3] = y;
-
-    invalidate();
-}
-
 extern "C" void EMSCRIPTEN_KEEPALIVE append_letter(char letter)
 {
     test_str.push_back(letter);
@@ -173,8 +132,33 @@ extern "C" void EMSCRIPTEN_KEEPALIVE append_letter(char letter)
 
 extern "C" void EMSCRIPTEN_KEEPALIVE remove_letter()
 {
-    if(test_str.size() <= 0) return;
+    if (test_str.size() <= 0)
+        return;
     test_str.pop_back();
+}
+
+extern "C" void EMSCRIPTEN_KEEPALIVE mouse_down(float x, float y)
+{
+    state->mouse_handler.mouse_down(glm::vec2(x, y));
+    invalidate();
+}
+
+extern "C" void EMSCRIPTEN_KEEPALIVE mouse_up(float x, float y)
+{
+    state->mouse_handler.mouse_up(glm::vec2(x, y));
+    invalidate();
+}
+
+extern "C" void EMSCRIPTEN_KEEPALIVE mouse_move(float x, float y)
+{
+    state->mouse_handler.mouse_move(glm::vec2(x, y));
+    invalidate();
+}
+
+extern "C" void EMSCRIPTEN_KEEPALIVE mouse_zoom(float value)
+{
+    state->mouse_handler.set_zoom(value);
+    invalidate();
 }
 
 #endif
@@ -226,7 +210,9 @@ void clean()
 {
     delete set;
     delete loader;
+    delete state;
 }
+
 
 
 int main(int argc, char *argv[])
@@ -241,13 +227,13 @@ int main(int argc, char *argv[])
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
     SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
     SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 8);
-    window = SDL_CreateWindow("test", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 640, 480,
+    window = SDL_CreateWindow("test", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, WIDTH, HEIGHT,
                               SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_SHOWN | SDL_WINDOW_ALLOW_HIGHDPI); //only SDL_WINDOW_OPENGL may suffice
     if (!window)                                                                                                       //if it doesn't work, lower the bar
     {
         SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 0);
         SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 0);
-        window = SDL_CreateWindow("Example", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 640, 480,
+        window = SDL_CreateWindow("Example", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, WIDTH, HEIGHT,
                                   SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_SHOWN | SDL_WINDOW_ALLOW_HIGHDPI); //same as above
         if (!window)                                                                                                       //if this doesn't work, it's probably becouse of an error. so we log it
         {
@@ -282,42 +268,24 @@ int main(int argc, char *argv[])
 
     // Create a Vertex Buffer Object and copy the vertex data to it
 
-    GLuint vbo;
-    glGenBuffers(1, &vbo);
-
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    triangle_program = create_shader_program(vertexSource, fragmentSource);
-    ortho_location = glGetUniformLocation(triangle_program, "orthoMatrix");
 
     glyph_program = create_shader_program(glyphVertexSource, glyphFragmentSource);
     otrho_glyph_location = glGetUniformLocation(glyph_program, "orthoMatrix");
     character_matrix_location = glGetUniformLocation(glyph_program, "characterMatrix");
+    view_matrix_location = glGetUniformLocation(glyph_program, "viewMatrix");
 
     // set GL viewport
-    glViewport(0, 0, 640, 480);
+    glViewport(0, 0, WIDTH, HEIGHT);
     glEnable(GL_ALPHA);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-
+    state = new StateHandler();
     loader = new Loader();
     set = new CharacterSet("fonts/arial.ttf", 128, loader);
 
-    for(int i = 0; i < 128; i++)
+    for (int i = 0; i < 128; i++)
         set->generate_character((char)i);
 
-
-
-    glGenVertexArrays(1, &triangleVAO);
-    glGenBuffers(1, &triangleVBO);
-    glBindVertexArray(triangleVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, triangleVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 2 * 3, vertices, GL_DYNAMIC_DRAW);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, 0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
 
 // LOOP FOR DESKTOP VERSION
 #ifndef __EMS__

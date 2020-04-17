@@ -11,5 +11,5 @@ struct Character
 
     glm::ivec2 size;
     glm::ivec2 offset;
-    GLuint advance;
+    glm::ivec2 advance;
 };

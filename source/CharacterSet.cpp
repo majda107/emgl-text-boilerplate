@@ -15,6 +15,9 @@ GLuint CharacterSet::generate_texture(FT_Face face)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glGenerateMipmap(GL_TEXTURE_2D);
+
     return texture;
 }
 
@@ -44,17 +47,18 @@ void CharacterSet::generate_character(char letter)
     FT_Face face;
     FT_New_Face(this->m_ft, "fonts/arial.ttf", 0, &face);
 
-    FT_Set_Pixel_Sizes(face, 0, 48);
+    // FT_Set_Pixel_Sizes(face, 0, 48);
+    FT_Set_Pixel_Sizes(face, 0, 64);
 
     FT_Load_Char(face, letter, FT_LOAD_RENDER);
 
-    printf("Face of X built.. : %d by %d\n", face->glyph->bitmap.width, face->glyph->bitmap.rows);
+    // printf("Face of X built.. : %d by %d\n", face->glyph->bitmap.width, face->glyph->bitmap.rows);
 
     auto character = new Character;
     character->texture_id = this->generate_texture(face);
     character->size = glm::ivec2(face->glyph->bitmap.width, face->glyph->bitmap.rows);
     character->offset = glm::ivec2(face->glyph->bitmap_left, face->glyph->bitmap_top);
-    character->advance = face->glyph->advance.x;
+    character->advance = glm::vec2(face->glyph->advance.x, face->glyph->advance.y);
 
     this->generate_model(character);
 
