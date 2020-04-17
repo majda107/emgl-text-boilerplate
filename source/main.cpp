@@ -133,6 +133,7 @@ extern "C" void EMSCRIPTEN_KEEPALIVE toggle_background_color()
 extern "C" void EMSCRIPTEN_KEEPALIVE append_letter(char letter)
 {
     test_str.push_back(letter);
+    invalidate();
 }
 
 extern "C" void EMSCRIPTEN_KEEPALIVE remove_letter()
@@ -140,6 +141,7 @@ extern "C" void EMSCRIPTEN_KEEPALIVE remove_letter()
     if (test_str.size() <= 0)
         return;
     test_str.pop_back();
+    invalidate();
 }
 
 extern "C" void EMSCRIPTEN_KEEPALIVE mouse_down(float x, float y)
